@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.5, user-scalable=yes">
 <meta name="theme-color" content="#1e3a5f">
 <meta name="mobile-web-app-capable" content="yes">
 <title>国債管理</title>
@@ -366,12 +366,12 @@ tr:nth-child(even) td{background:var(--row-even)}
       <button class="hbtn sp-year-nav-btn" onclick="yearlyYearMove(1)">▶</button>
     </div>
     <div class="card">
-      <div class="card-header">📅 月別 利払い予定（概算・税引前）</div>
+      <div class="card-header">📅 月別 利払い予定（概算・税引後の手取り）</div>
       <div class="card-body" style="padding:0">
         <div class="tbl-wrap">
           <table id="yearly-month-table">
             <colgroup><col class="col-month"><col class="col-cnt"><col class="col-sum"></colgroup>
-            <thead><tr><th>月</th><th style="text-align:right">件数</th><th style="text-align:right">利子概算合計</th></tr></thead>
+            <thead><tr><th>月</th><th style="text-align:right">件数</th><th style="text-align:right">手取り利子合計</th></tr></thead>
             <tbody id="yearly-month-tbody"></tbody>
           </table>
         </div>
@@ -584,6 +584,7 @@ function computeBondInfo(b){
 }
 function statusLabel(s){return{redeemable:'換金可能',locked:'換金制限中',matured:'満期済'}[s]||s}
 function interestHalf(b){return b.faceValue*(b.rate/100)/2}
+function interestNet(b){const g=Math.floor(interestHalf(b));return g-Math.floor(g*0.15315)-Math.floor(g*0.05)}
 
 function showToast(msg){
   const t=document.getElementById('toast');
@@ -660,7 +661,8 @@ function renderList(){
       <div class="bond-amount">${fmt(b.faceValue)}</div>
       <div class="bond-meta">
         <div>購入日 ${fmtDate(info.purchase)} ／ 満期 ${fmtDate(info.maturity)}</div>
-        <div>利率 ${b.rate}%（半年利子概算 ${fmt(interestHalf(b))}）</div>
+        <div>利率 ${b.rate}%（税引後 <b style="color:var(--accent)">${Number((b.rate*(1-0.20315)).toFixed(3))}%</b>）</div>
+        <div>半年の手取り利子 <b style="color:var(--accent);font-size:15px">${fmt(interestNet(b))}</b>（税引前 ${fmt(interestHalf(b))}）</div>
         <div>${nextLine}</div>
         ${b.broker?`<div>窓口: ${esc(b.broker)}</div>`:''}
       </div>
@@ -772,7 +774,7 @@ function renderYearly(){
   document.getElementById('yearly-year-label').textContent=selectedYear+'年';
 
   // 月別の利払い予定を集計
-  const monthBuckets=Array.from({length:12},()=>({count:0,sum:0}));
+  const monthBuckets=Array.from({length:12},()=>({count:0,sum:0,gross:0}));
   const paymentEvents=[];
   bonds.forEach(b=>{
     const info=computeBondInfo(b);
@@ -780,7 +782,8 @@ function renderYearly(){
       if(d.getFullYear()===selectedYear){
         const mo=d.getMonth();
         monthBuckets[mo].count++;
-        monthBuckets[mo].sum+=interestHalf(b);
+        monthBuckets[mo].sum+=interestNet(b);
+        monthBuckets[mo].gross+=interestHalf(b);
         paymentEvents.push({date:d,bond:b});
       }
     });
@@ -790,7 +793,7 @@ function renderYearly(){
   let rows='';
   for(let mo=0;mo<12;mo++){
     const mb=monthBuckets[mo];
-    rows+=`<tr><td>${mo+1}月</td><td class="amount">${mb.count?mb.count+'件':'―'}</td><td class="amount">${mb.count?fmt(mb.sum):'―'}</td></tr>`;
+    rows+=`<tr><td>${mo+1}月</td><td class="amount">${mb.count?mb.count+'件':'―'}</td><td class="amount">${mb.count?'<b>'+fmt(mb.sum)+'</b><div style="font-size:11px;color:var(--text-sub)">税引前 '+fmt(mb.gross)+'</div>':'―'}</td></tr>`;
   }
   document.getElementById('yearly-month-tbody').innerHTML=rows;
 
@@ -800,8 +803,8 @@ function renderYearly(){
   }else{
     pel.innerHTML='<div class="sched-list">'+paymentEvents.map(ev=>{
       const t=TYPES[ev.bond.type];
-      return `<div class="sched-item"><div class="d">${fmtDate(ev.date)}<br><span class="type-badge" style="background:${t.color};margin-top:3px;display:inline-block">${t.label}</span></div><div class="a">${fmt(interestHalf(ev.bond))}</div></div>`;
-    }).join('')+'</div><div class="note-sm">※利子は税引前の概算値です（20.315%の源泉分離課税が控除されます）。変動10年は半年ごとの利率見直しにより実際の金額は変わります。</div>';
+      return `<div class="sched-item"><div class="d">${fmtDate(ev.date)}<br><span class="type-badge" style="background:${t.color};margin-top:3px;display:inline-block">${t.label}</span></div><div class="a" style="text-align:right">${fmt(interestNet(ev.bond))}<div style="font-size:11px;font-weight:400;color:var(--text-sub)">税引前 ${fmt(interestHalf(ev.bond))}</div></div></div>`;
+    }).join('')+'</div><div class="note-sm">※金額は税引後の手取り概算です（20.315%の源泉分離課税を差し引き済み）。変動10年は半年ごとの利率見直しにより実際の金額は変わります。</div>';
   }
 
   const matured=bonds.filter(b=>computeBondInfo(b).maturity.getFullYear()===selectedYear)
