@@ -429,9 +429,9 @@ tr:nth-child(even) td{background:var(--row-even)}
         </div>
       </div>
       <div class="form-full">
-        <label>購入日（発行日）</label>
+        <label>発行日</label>
         <input type="date" id="bond-date">
-        <div class="field-hint">利払い・満期・中途換金可能日は発行日基準で自動計算します</div>
+        <div class="field-hint">利払い・償還日・中途換金可能日は発行日基準で自動計算します</div>
       </div>
       <div class="form-full">
         <label>額面金額（円）</label>
@@ -660,7 +660,7 @@ function renderList(){
       </div>
       <div class="bond-amount">${fmt(b.faceValue)}</div>
       <div class="bond-meta">
-        <div>購入日 ${fmtDate(info.purchase)} ／ 満期 ${fmtDate(info.maturity)}</div>
+        <div>発行日 ${fmtDate(info.purchase)} ／ 償還日 ${fmtDate(info.maturity)}</div>
         <div>利率 ${b.rate}%（税引後 <b style="color:var(--accent)">${Number((b.rate*(1-0.20315)).toFixed(3))}%</b>）</div>
         <div>半年の手取り利子 <b style="color:var(--accent);font-size:15px">${fmt(interestNet(b))}</b>（税引前 ${fmt(interestHalf(b))}）</div>
         <div>${nextLine}</div>
@@ -737,7 +737,7 @@ function saveBond(){
   const rate=Number(document.getElementById('bond-rate').value);
   const broker=document.getElementById('bond-broker').value.trim();
   const memo=document.getElementById('bond-memo').value.trim();
-  if(!date){showToast('⚠ 購入日を入力してください');return}
+  if(!date){showToast('⚠ 発行日を入力してください');return}
   if(!face||face<10000){showToast('⚠ 額面金額を入力してください（1万円以上）');return}
   if(!rate&&rate!==0){showToast('⚠ 利率を入力してください');return}
   if(editingId){
