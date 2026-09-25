@@ -373,6 +373,7 @@ tr:nth-child(even) td{background:var(--row-even)}
             <colgroup><col class="col-month"><col class="col-cnt"><col class="col-sum"></colgroup>
             <thead><tr><th>月</th><th style="text-align:right">件数</th><th style="text-align:right">手取り利子合計</th></tr></thead>
             <tbody id="yearly-month-tbody"></tbody>
+            <tfoot id="yearly-month-tfoot"></tfoot>
           </table>
         </div>
       </div>
@@ -796,6 +797,12 @@ function renderYearly(){
     rows+=`<tr><td>${mo+1}月</td><td class="amount">${mb.count?mb.count+'件':'―'}</td><td class="amount">${mb.count?'<b>'+fmt(mb.sum)+'</b><div style="font-size:11px;color:var(--text-sub)">税引前 '+fmt(mb.gross)+'</div>':'―'}</td></tr>`;
   }
   document.getElementById('yearly-month-tbody').innerHTML=rows;
+
+  const totalCount=monthBuckets.reduce((s,mb)=>s+mb.count,0);
+  const totalSum=monthBuckets.reduce((s,mb)=>s+mb.sum,0);
+  const totalGross=monthBuckets.reduce((s,mb)=>s+mb.gross,0);
+  document.getElementById('yearly-month-tfoot').innerHTML=
+    `<tr style="font-weight:700;border-top:2px solid var(--border)"><td>合計</td><td class="amount">${totalCount}件</td><td class="amount">${fmt(totalSum)}<div style="font-size:11px;font-weight:400;color:var(--text-sub)">税引前 ${fmt(totalGross)}</div></td></tr>`;
 
   const pel=document.getElementById('yearly-payment-list');
   if(!paymentEvents.length){
